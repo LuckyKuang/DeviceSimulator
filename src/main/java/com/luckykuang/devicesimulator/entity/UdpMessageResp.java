@@ -16,15 +16,13 @@
 
 package com.luckykuang.devicesimulator.entity;
 
-import lombok.Data;
-
 /**
  * @author luckykuang
  * @date 2024/2/23 18:43
  */
-@Data
-public class UdpMessageResp {
-    private String ip;
-    private Integer port;
-    private String data;
+public record UdpMessageResp(
+        String ip,
+        Integer port,
+        String data) {
+
 }

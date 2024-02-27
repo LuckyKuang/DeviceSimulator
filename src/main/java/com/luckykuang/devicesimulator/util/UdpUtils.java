@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.luckykuang.devicesimulator.constant.Constants.*;
+
 /**
  * @author luckykuang
  * @date 2024/2/19 16:06
@@ -46,12 +48,12 @@ public final class UdpUtils {
 
     public static void startUdpServer(EventLoopGroup workerGroup, String ip, Integer port, String codec) {
         try {
-            if ("ascii".equalsIgnoreCase(codec)){
+            if (ASCII.equalsIgnoreCase(codec)){
                 UDP_DEVICE_CACHE.put(ip,getAsciiExecCache());
-            } else if ("hex".equalsIgnoreCase(codec)){
+            } else if (HEX.equalsIgnoreCase(codec)){
                 UDP_DEVICE_CACHE.put(ip,getHexExecCache());
             } else {
-                throw new RuntimeException("Unsupported encoding");
+                throw new RuntimeException(UNSUPPORTED);
             }
             Bootstrap serverBootstrap = new Bootstrap();
             serverBootstrap.group(workerGroup);
@@ -103,7 +105,7 @@ public final class UdpUtils {
 
     public static boolean clientResp(ChannelHandlerContext ctx, String msg, String exec, String execResp, String respIp,
                                      Integer port, Map<String, String> execCache, String ip, String codec) {
-        if ("ascii".equalsIgnoreCase(codec)){
+        if (ASCII.equalsIgnoreCase(codec)){
             if (msg.equals(exec)){
                 log.info("udp ip:{},receive:{},return:{}",ip, msg, execResp);
                 byte[] bytes = execResp.getBytes(CharsetUtil.US_ASCII);
@@ -120,7 +122,7 @@ public final class UdpUtils {
                 }
                 return true;
             }
-        } else if ("hex".equalsIgnoreCase(codec)) {
+        } else if (HEX.equalsIgnoreCase(codec)) {
             if (msg.equals(exec)){
                 log.info("udp ip:{},receive:{},return:{}",ip, msg, execResp);
                 byte[] bytes = execResp.getBytes(CharsetUtil.US_ASCII);
@@ -138,7 +140,7 @@ public final class UdpUtils {
                 return true;
             }
         } else {
-            throw new RuntimeException("Unsupported encoding");
+            throw new RuntimeException(UNSUPPORTED);
         }
         return false;
     }

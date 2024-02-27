@@ -44,11 +44,7 @@ public class UdpServerHexDecoder extends MessageToMessageDecoder<DatagramPacket>
                 byteBuf.readBytes(bytes);
                 String received = Hex.encodeHexString(bytes);
                 log.info("udp decode received clientIp:{},msg:{}",clientIp,received);
-                UdpMessageResp rsp = new UdpMessageResp();
-                rsp.setIp(clientIp);
-                rsp.setPort(port);
-                rsp.setData(received);
-                out.add(rsp);
+                out.add(new UdpMessageResp(clientIp,port,received));
             }
         } catch (Exception e){
             log.error("udp decode exception",e);

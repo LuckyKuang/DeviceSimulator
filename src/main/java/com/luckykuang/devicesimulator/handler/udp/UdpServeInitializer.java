@@ -26,6 +26,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.luckykuang.devicesimulator.constant.Constants.*;
+
 /**
  * @author luckykuang
  * @date 2024/2/19 15:57
@@ -43,18 +45,18 @@ public class UdpServeInitializer extends ChannelInitializer<NioDatagramChannel> 
     @Override
     protected void initChannel(NioDatagramChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        if ("ascii".equalsIgnoreCase(codec)){
+        if (ASCII.equalsIgnoreCase(codec)){
             pipeline.addLast(
                     new UdpServerAsciiEncoder(),
                     new UdpServerAsciiDecoder(),
                     new UdpServerHandler(ip,codec));
-        } else if ("hex".equalsIgnoreCase(codec)) {
+        } else if (HEX.equalsIgnoreCase(codec)) {
             pipeline.addLast(
                     new UdpServerHexEncoder(),
                     new UdpServerHexDecoder(),
                     new UdpServerHandler(ip,codec));
         } else {
-            throw new RuntimeException("Unsupported encoding");
+            throw new RuntimeException(UNSUPPORTED);
         }
     }
 }

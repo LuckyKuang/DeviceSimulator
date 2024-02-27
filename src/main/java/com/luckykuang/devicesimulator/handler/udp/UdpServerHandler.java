@@ -44,9 +44,9 @@ public class UdpServerHandler extends SimpleChannelInboundHandler<UdpMessageResp
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, UdpMessageResp resp) throws Exception {
-        String respIp = resp.getIp();
-        Integer port = resp.getPort();
-        String msg = resp.getData();
+        String respIp = resp.ip();
+        Integer port = resp.port();
+        String msg = resp.data();
         Map<String, String> execCache = UDP_DEVICE_CACHE.get(ip);
         for (Map.Entry<String, String> entry : execCache.entrySet()) {
             String exec = entry.getKey();

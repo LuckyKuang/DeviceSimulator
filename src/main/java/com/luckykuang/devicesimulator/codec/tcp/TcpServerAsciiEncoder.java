@@ -22,6 +22,8 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.luckykuang.devicesimulator.constant.Constants.DECIMAL_DELIMITER;
+
 /**
  * @author luckykuang
  * @date 2024/2/19 16:51
@@ -33,8 +35,8 @@ public class TcpServerAsciiEncoder extends MessageToByteEncoder<String> {
         try {
             log.info("tcp encode send msg:[{}]",in);
             // The encoding rule for netty is \r\n
-            if (!in.contains("\r\n")){
-                in = in + "\r\n";
+            if (!in.contains(DECIMAL_DELIMITER)){
+                in = in + DECIMAL_DELIMITER;
             }
             byte[] bytes = in.getBytes(CharsetUtil.US_ASCII);
             out.writeBytes(bytes);

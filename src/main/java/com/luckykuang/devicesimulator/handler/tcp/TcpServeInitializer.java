@@ -30,6 +30,8 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.luckykuang.devicesimulator.constant.Constants.*;
+
 /**
  * @author luckykuang
  * @date 2024/2/19 15:57
@@ -47,20 +49,20 @@ public class TcpServeInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        if ("ascii".equalsIgnoreCase(codec)){
+        if (ASCII.equalsIgnoreCase(codec)){
             pipeline.addLast(
                     new TcpServerAsciiEncoder(),
                     new LineBasedFrameDecoder(1024),
                     new TcpServerAsciiDecoder(),
                     new TcpServerHandler(ip,codec));
-        } else if ("hex".equalsIgnoreCase(codec)) {
+        } else if (HEX.equalsIgnoreCase(codec)) {
             pipeline.addLast(
                     new TcpServerHexEncoder(),
                     new TcpServerHexDecoder(),
-                    new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer("0d0a", CharsetUtil.US_ASCII)),
+                    new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer(HEX_DELIMITER, CharsetUtil.US_ASCII)),
                     new TcpServerHandler(ip,codec));
         } else {
-            throw new RuntimeException("Unsupported encoding");
+            throw new RuntimeException(UNSUPPORTED);
         }
     }
 }
