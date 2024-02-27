@@ -16,7 +16,7 @@
 
 package com.luckykuang.devicesimulator.codec.udp;
 
-import com.luckykuang.devicesimulator.entity.UdpMessageRsp;
+import com.luckykuang.devicesimulator.entity.UdpMessageResp;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -31,7 +31,7 @@ import java.util.List;
  * @date 2024/2/19 17:13
  */
 @Slf4j
-public class UdpServerDecoder extends MessageToMessageDecoder<DatagramPacket> {
+public class UdpServerAsciiDecoder extends MessageToMessageDecoder<DatagramPacket> {
     @Override
     protected void decode(ChannelHandlerContext ctx, DatagramPacket in, List<Object> out) throws Exception {
         try {
@@ -44,10 +44,10 @@ public class UdpServerDecoder extends MessageToMessageDecoder<DatagramPacket> {
                 byteBuf.readBytes(bytes);
                 String received = new String(bytes, CharsetUtil.US_ASCII);
                 log.info("udp decode received clientIp:{},msg:{}",clientIp,received);
-                UdpMessageRsp rsp = new UdpMessageRsp();
+                UdpMessageResp rsp = new UdpMessageResp();
                 rsp.setIp(clientIp);
                 rsp.setPort(port);
-                rsp.setDate(received);
+                rsp.setData(received);
                 out.add(rsp);
             }
         } catch (Exception e){

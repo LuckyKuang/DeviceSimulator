@@ -35,8 +35,10 @@ import static com.luckykuang.devicesimulator.util.TcpUtils.TCP_DEVICE_CACHE;
 @ChannelHandler.Sharable
 public class TcpServerHandler extends SimpleChannelInboundHandler<String> {
     private final String ip;
-    public TcpServerHandler(String ip) {
+    private final String codec;
+    public TcpServerHandler(String ip,String codec) {
         this.ip = ip;
+        this.codec = codec;
     }
 
     @Override
@@ -44,22 +46,8 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<String> {
         Map<String, String> execCache = TCP_DEVICE_CACHE.get(ip);
         for (Map.Entry<String, String> entry : execCache.entrySet()) {
             String exec = entry.getKey();
-            String execRsp = entry.getValue();
-            if (msg.contains(exec)){
-                log.info("tcp ip:{},receive:{},return:{}",ip,msg,execRsp);
-                ctx.channel().writeAndFlush(execRsp);
-                if (msg.contains("AT+System=On")){
-                    execCache.put("AT+System?","AT+System#On");
-                } else if (msg.contains("AT+System=Off")){
-                    execCache.put("AT+System?","AT+System#Off");
-                    execCache.put("AT+LightSource?","AT+LightSource#Off");
-                } else if (msg.contains("AT+LightSource=On")){
-                    execCache.put("AT+LightSource?","AT+LightSource#On");
-                } else if (msg.contains("AT+LightSource=Off")){
-                    execCache.put("AT+LightSource?","AT+LightSource#Off");
-                }
-                break;
-            }
+            String execResp = entry.getValue();
+            if (TcpUtils.clientResp(ctx, msg, exec, execResp, execCache, ip, codec)) break;
         }
     }
 
@@ -68,7 +56,6 @@ public class TcpServerHandler extends SimpleChannelInboundHandler<String> {
         super.channelActive(ctx);
         String clientIp = TcpUtils.getClientIp(ctx);
         log.info("tcp clientIp: [{}] connect...",clientIp);
-        ctx.channel().writeAndFlush("PJLINK");
     }
 
     @Override

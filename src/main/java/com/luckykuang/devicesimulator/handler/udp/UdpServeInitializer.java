@@ -16,8 +16,10 @@
 
 package com.luckykuang.devicesimulator.handler.udp;
 
-import com.luckykuang.devicesimulator.codec.udp.UdpServerDecoder;
-import com.luckykuang.devicesimulator.codec.udp.UdpServerEncoder;
+import com.luckykuang.devicesimulator.codec.udp.UdpServerAsciiDecoder;
+import com.luckykuang.devicesimulator.codec.udp.UdpServerAsciiEncoder;
+import com.luckykuang.devicesimulator.codec.udp.UdpServerHexDecoder;
+import com.luckykuang.devicesimulator.codec.udp.UdpServerHexEncoder;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -32,16 +34,27 @@ import lombok.extern.slf4j.Slf4j;
 @ChannelHandler.Sharable
 public class UdpServeInitializer extends ChannelInitializer<NioDatagramChannel> {
     private final String ip;
-    public UdpServeInitializer(String ip) {
+    private final String codec;
+    public UdpServeInitializer(String ip,String codec) {
         this.ip = ip;
+        this.codec = codec;
     }
 
     @Override
     protected void initChannel(NioDatagramChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(
-                new UdpServerEncoder(),
-                new UdpServerDecoder(),
-                new UdpServerHandler(ip));
+        if ("ascii".equalsIgnoreCase(codec)){
+            pipeline.addLast(
+                    new UdpServerAsciiEncoder(),
+                    new UdpServerAsciiDecoder(),
+                    new UdpServerHandler(ip,codec));
+        } else if ("hex".equalsIgnoreCase(codec)) {
+            pipeline.addLast(
+                    new UdpServerHexEncoder(),
+                    new UdpServerHexDecoder(),
+                    new UdpServerHandler(ip,codec));
+        } else {
+            throw new RuntimeException("Unsupported encoding");
+        }
     }
 }

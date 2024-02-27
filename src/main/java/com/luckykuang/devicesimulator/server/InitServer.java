@@ -53,14 +53,14 @@ public class InitServer {
             for (int i = tcpConfig.getStartRouterIp(); i <= tcpConfig.getEndRouterIp(); i++) {
                 for (int j = tcpConfig.getStartIp(); j <= tcpConfig.getEndIp(); j++) {
                     String ip = tcpConfig.getIpPrefix() + "." + i + "." + j;
-                    executorService.execute(() -> startTcpServer(tcpBossGroup,tcpWorkerGroup,ip,tcpConfig.getPort()));
+                    executorService.execute(() -> startTcpServer(tcpBossGroup,tcpWorkerGroup,ip,tcpConfig.getPort(),tcpConfig.getCodec()));
                 }
             }
             // udp device emulation
             for (int i = udpConfig.getStartRouterIp(); i <= udpConfig.getEndRouterIp(); i++) {
                 for (int j = udpConfig.getStartIp(); j <= udpConfig.getEndIp(); j++) {
                     String ip = udpConfig.getIpPrefix() + "." + i + "." + j;
-                    executorService.execute(() -> startUdpServer(udpWorkerGroup,ip,udpConfig.getPort()));
+                    executorService.execute(() -> startUdpServer(udpWorkerGroup,ip,udpConfig.getPort(),udpConfig.getCodec()));
                 }
             }
         }

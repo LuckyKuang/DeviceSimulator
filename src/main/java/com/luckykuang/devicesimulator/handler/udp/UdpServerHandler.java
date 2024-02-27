@@ -16,7 +16,7 @@
 
 package com.luckykuang.devicesimulator.handler.udp;
 
-import com.luckykuang.devicesimulator.entity.UdpMessageRsp;
+import com.luckykuang.devicesimulator.entity.UdpMessageResp;
 import com.luckykuang.devicesimulator.util.UdpUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -34,36 +34,24 @@ import static com.luckykuang.devicesimulator.util.UdpUtils.UDP_DEVICE_CACHE;
  */
 @Slf4j
 @ChannelHandler.Sharable
-public class UdpServerHandler extends SimpleChannelInboundHandler<UdpMessageRsp> {
+public class UdpServerHandler extends SimpleChannelInboundHandler<UdpMessageResp> {
     private final String ip;
-    public UdpServerHandler(String ip) {
+    private final String codec;
+    public UdpServerHandler(String ip,String codec) {
         this.ip = ip;
+        this.codec = codec;
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, UdpMessageRsp rsp) throws Exception {
-        String rspIp = rsp.getIp();
-        Integer port = rsp.getPort();
-        String msg = rsp.getDate();
+    protected void channelRead0(ChannelHandlerContext ctx, UdpMessageResp resp) throws Exception {
+        String respIp = resp.getIp();
+        Integer port = resp.getPort();
+        String msg = resp.getData();
         Map<String, String> execCache = UDP_DEVICE_CACHE.get(ip);
         for (Map.Entry<String, String> entry : execCache.entrySet()) {
             String exec = entry.getKey();
-            String execRsp = entry.getValue();
-            if (msg.contains(exec)){
-                log.info("udp ip:{},receive:{},return:{}",ip,msg,execRsp);
-                ctx.channel().writeAndFlush(UdpUtils.getDatagramPacket(execRsp,rspIp,port));
-                if (msg.contains("AT+System=On")){
-                    execCache.put("AT+System?","AT+System#On");
-                } else if (msg.contains("AT+System=Off")){
-                    execCache.put("AT+System?","AT+System#Off");
-                    execCache.put("AT+LightSource?","AT+LightSource#Off");
-                } else if (msg.contains("AT+LightSource=On")){
-                    execCache.put("AT+LightSource?","AT+LightSource#On");
-                } else if (msg.contains("AT+LightSource=Off")){
-                    execCache.put("AT+LightSource?","AT+LightSource#Off");
-                }
-                break;
-            }
+            String execResp = entry.getValue();
+            if (UdpUtils.clientResp(ctx, msg, exec, execResp, respIp, port, execCache, ip, codec)) break;
         }
     }
 
@@ -72,6 +60,7 @@ public class UdpServerHandler extends SimpleChannelInboundHandler<UdpMessageRsp>
         super.channelActive(ctx);
         String clientIp = UdpUtils.getClientIp(ctx);
         log.info("udp clientIp:{} connect...",clientIp);
+        ctx.channel().writeAndFlush("connect success...");
     }
 
     @Override

@@ -39,16 +39,22 @@ public final class TcpUtils {
     public static final Map<String,Map<String,String>> TCP_DEVICE_CACHE = new ConcurrentHashMap<>();
     private TcpUtils(){}
 
-    public static void startTcpServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, String ip, Integer port) {
+    public static void startTcpServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, String ip, Integer port, String codec) {
         try {
-            TCP_DEVICE_CACHE.put(ip,getExecCache(ip));
+            if ("ascii".equalsIgnoreCase(codec)){
+                TCP_DEVICE_CACHE.put(ip,getAsciiExecCache());
+            } else if ("hex".equalsIgnoreCase(codec)){
+                TCP_DEVICE_CACHE.put(ip,getHexExecCache());
+            } else {
+                throw new RuntimeException("Unsupported encoding");
+            }
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(bossGroup, workerGroup);
             serverBootstrap.channel(NioServerSocketChannel.class);
             serverBootstrap.option(ChannelOption.SO_BACKLOG, 1024);
             serverBootstrap.option(ChannelOption.SO_REUSEADDR,true);
             serverBootstrap.childOption(ChannelOption.TCP_NODELAY,true);
-            serverBootstrap.childHandler(new TcpServeInitializer(ip));
+            serverBootstrap.childHandler(new TcpServeInitializer(ip,codec));
             ChannelFuture channelFuture = serverBootstrap.bind(ip,port).sync();
             log.info("tcp server start success, ip:{}, port:{}",ip,port);
             channelFuture.channel().closeFuture().sync();
@@ -59,7 +65,12 @@ public final class TcpUtils {
         }
     }
 
-    private static Map<String,String> getExecCache(String ip) {
+    public static String getClientIp(ChannelHandlerContext ctx) {
+        InetSocketAddress inSocket = (InetSocketAddress) ctx.channel().remoteAddress();
+        return inSocket.getAddress().getHostAddress();
+    }
+
+    private static Map<String,String> getAsciiExecCache() {
         Map<String,String> execCache = new HashMap<>();
         execCache.put("AT+System?","AT+System#Off");
         execCache.put("AT+System=On","AT+System#Ok");
@@ -67,12 +78,57 @@ public final class TcpUtils {
         execCache.put("AT+LightSource?","AT+LightSource#Off");
         execCache.put("AT+LightSource=On","AT+LightSource#Ok");
         execCache.put("AT+LightSource=Off","AT+LightSource#Ok");
-        execCache.put("AT+Ip?","AT+Ip#" + ip);
         return execCache;
     }
 
-    public static String getClientIp(ChannelHandlerContext ctx) {
-        InetSocketAddress inSocket = (InetSocketAddress) ctx.channel().remoteAddress();
-        return inSocket.getAddress().getHostAddress();
+    private static Map<String,String> getHexExecCache() {
+        Map<String,String> execCache = new HashMap<>();
+        execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f66660d0a");
+        execCache.put("41542b53797374656d3d4f6e0d0a","41542b53797374656d234f6b0d0a");
+        execCache.put("41542b53797374656d3d4f66660d0a","41542b53797374656d234f6b0d0a");
+        execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
+        execCache.put("41542b4c69676874536f757263653d4f6e0d0a","41542b4c69676874536f75726365234f6b0d0a");
+        execCache.put("41542b4c69676874536f757263653d4f66660d0a","41542b4c69676874536f75726365234f6b0d0a");
+        return execCache;
+    }
+
+    public static boolean clientResp(ChannelHandlerContext ctx, String msg, String exec, String execResp,
+                                     Map<String, String> execCache, String ip, String codec) {
+        if ("ascii".equalsIgnoreCase(codec)){
+            if (msg.equals(exec)){
+                log.info("tcp ip:{},receive:{},return:{}",ip, msg, execResp);
+                ctx.channel().writeAndFlush(execResp);
+                if (msg.equals("AT+System=On")){
+                    execCache.put("AT+System?","AT+System#On");
+                } else if (msg.equals("AT+System=Off")){
+                    execCache.put("AT+System?","AT+System#Off");
+                    execCache.put("AT+LightSource?","AT+LightSource#Off");
+                } else if (msg.equals("AT+LightSource=On")){
+                    execCache.put("AT+LightSource?","AT+LightSource#On");
+                } else if (msg.equals("AT+LightSource=Off")){
+                    execCache.put("AT+LightSource?","AT+LightSource#Off");
+                }
+                return true;
+            }
+        } else if ("hex".equalsIgnoreCase(codec)) {
+            if (msg.equals(exec)){
+                log.info("tcp ip:{},receive:{},return:{}",ip, msg, execResp);
+                ctx.channel().writeAndFlush(execResp);
+                if (msg.equals("41542b53797374656d3d4f6e0d0a")){
+                    execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f6e0d0a");
+                } else if (msg.equals("41542b53797374656d3d4f66660d0a")){
+                    execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f66660d0a");
+                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
+                } else if (msg.equals("41542b4c69676874536f757263653d4f6e0d0a")){
+                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f6e0d0a");
+                } else if (msg.equals("41542b4c69676874536f757263653d4f66660d0a")){
+                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
+                }
+                return true;
+            }
+        } else {
+            throw new RuntimeException("Unsupported encoding");
+        }
+        return false;
     }
 }

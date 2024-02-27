@@ -23,8 +23,8 @@ import lombok.Data;
  * @date 2024/2/23 18:43
  */
 @Data
-public class UdpMessageRsp {
+public class UdpMessageResp {
     private String ip;
     private Integer port;
-    private String date;
+    private String data;
 }

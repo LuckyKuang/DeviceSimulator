@@ -21,9 +21,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageEncoder;
+import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -31,7 +31,7 @@ import java.util.List;
  * @date 2024/2/19 16:51
  */
 @Slf4j
-public class UdpServerEncoder extends MessageToMessageEncoder<DatagramPacket> {
+public class UdpServerAsciiEncoder extends MessageToMessageEncoder<DatagramPacket> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DatagramPacket in, List<Object> out) throws Exception {
@@ -43,9 +43,10 @@ public class UdpServerEncoder extends MessageToMessageEncoder<DatagramPacket> {
             if (readableBytes > 0) {
                 byte[] bytes = new byte[readableBytes];
                 byteBuf.readBytes(bytes);
-                String send = new String(bytes, StandardCharsets.US_ASCII);
+                String send = new String(bytes, CharsetUtil.US_ASCII);
                 log.info("udp encode send msg:{},ip:{},port:{}",send,clientIp,port);
-                out.add(UdpUtils.getDatagramPacket(send,clientIp,port));
+                byte[] data = send.getBytes(CharsetUtil.US_ASCII);
+                out.add(UdpUtils.getDatagramPacket(data,clientIp,port));
             }
         } catch (Exception e){
             log.error("udp encode exception",e);

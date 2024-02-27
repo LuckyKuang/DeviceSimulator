@@ -20,24 +20,19 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.nio.charset.StandardCharsets;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * @author luckykuang
  * @date 2024/2/19 16:51
  */
 @Slf4j
-public class TcpServerEncoder extends MessageToByteEncoder<String> {
+public class TcpServerHexEncoder extends MessageToByteEncoder<String> {
     @Override
     protected void encode(ChannelHandlerContext ctx, String in, ByteBuf out) throws Exception {
         try {
             log.info("tcp encode send msg:[{}]",in);
-            // The encoding rule for netty is \r\n
-            if (!in.contains("\r\n")){
-                in = in + "\r\n";
-            }
-            byte[] bytes = in.getBytes(StandardCharsets.US_ASCII);
+            byte[] bytes = Hex.decodeHex(in);
             out.writeBytes(bytes);
         } catch (Exception e){
             log.error("tcp encode exception",e);

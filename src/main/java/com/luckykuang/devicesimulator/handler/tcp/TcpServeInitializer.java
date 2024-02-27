@@ -16,13 +16,18 @@
 
 package com.luckykuang.devicesimulator.handler.tcp;
 
-import com.luckykuang.devicesimulator.codec.tcp.TcpServerDecoder;
-import com.luckykuang.devicesimulator.codec.tcp.TcpServerEncoder;
+import com.luckykuang.devicesimulator.codec.tcp.TcpServerAsciiDecoder;
+import com.luckykuang.devicesimulator.codec.tcp.TcpServerAsciiEncoder;
+import com.luckykuang.devicesimulator.codec.tcp.TcpServerHexDecoder;
+import com.luckykuang.devicesimulator.codec.tcp.TcpServerHexEncoder;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,17 +38,29 @@ import lombok.extern.slf4j.Slf4j;
 @ChannelHandler.Sharable
 public class TcpServeInitializer extends ChannelInitializer<NioSocketChannel> {
     private final String ip;
-    public TcpServeInitializer(String ip) {
+    private final String codec;
+    public TcpServeInitializer(String ip,String codec) {
         this.ip = ip;
+        this.codec = codec;
     }
 
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(
-                new TcpServerEncoder(),
-                new LineBasedFrameDecoder(1024),
-                new TcpServerDecoder(),
-                new TcpServerHandler(ip));
+        if ("ascii".equalsIgnoreCase(codec)){
+            pipeline.addLast(
+                    new TcpServerAsciiEncoder(),
+                    new LineBasedFrameDecoder(1024),
+                    new TcpServerAsciiDecoder(),
+                    new TcpServerHandler(ip,codec));
+        } else if ("hex".equalsIgnoreCase(codec)) {
+            pipeline.addLast(
+                    new TcpServerHexEncoder(),
+                    new TcpServerHexDecoder(),
+                    new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer("0d0a", CharsetUtil.US_ASCII)),
+                    new TcpServerHandler(ip,codec));
+        } else {
+            throw new RuntimeException("Unsupported encoding");
+        }
     }
 }

@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 public class TcpConfig {
     private Integer port;
     private String ipPrefix;
+    private String codec;
     private Integer startRouterIp;
     private Integer endRouterIp;
     private Integer startIp;

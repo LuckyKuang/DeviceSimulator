@@ -16,35 +16,30 @@
 
 package com.luckykuang.devicesimulator.codec.tcp;
 
-import com.luckykuang.devicesimulator.util.TcpUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * @author luckykuang
- * @date 2024/2/19 17:13
+ * @date 2024/2/19 16:51
  */
 @Slf4j
-public class TcpServerDecoder extends ByteToMessageDecoder {
+public class TcpServerAsciiEncoder extends MessageToByteEncoder<String> {
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, String in, ByteBuf out) throws Exception {
         try {
-            int readableBytes = in.readableBytes();
-            if (readableBytes > 0) {
-                byte[] bytes = new byte[readableBytes];
-                in.readBytes(bytes);
-                String received = new String(bytes, StandardCharsets.US_ASCII);
-                String clientIp = TcpUtils.getClientIp(ctx);
-                log.info("tcp decode received clientIp:{},msg:{}",clientIp,received);
-                out.add(received);
+            log.info("tcp encode send msg:[{}]",in);
+            // The encoding rule for netty is \r\n
+            if (!in.contains("\r\n")){
+                in = in + "\r\n";
             }
+            byte[] bytes = in.getBytes(CharsetUtil.US_ASCII);
+            out.writeBytes(bytes);
         } catch (Exception e){
-            log.error("tcp decode exception",e);
+            log.error("tcp encode exception",e);
         }
     }
 }
