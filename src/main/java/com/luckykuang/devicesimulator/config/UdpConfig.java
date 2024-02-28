@@ -31,8 +31,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "udp")
 public class UdpConfig {
     private Integer port;
-    private String ipPrefix;
+    private Boolean enable;
     private String codec;
+    private String ipPrefix;
     private Integer startRouterIp;
     private Integer endRouterIp;
     private Integer startIp;

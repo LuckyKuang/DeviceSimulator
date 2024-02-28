@@ -50,17 +50,23 @@ public class InitServer {
     public void init() {
         try(ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
             // tcp device emulation
-            for (int i = tcpConfig.getStartRouterIp(); i <= tcpConfig.getEndRouterIp(); i++) {
-                for (int j = tcpConfig.getStartIp(); j <= tcpConfig.getEndIp(); j++) {
-                    String ip = tcpConfig.getIpPrefix() + "." + i + "." + j;
-                    executorService.execute(() -> startTcpServer(tcpBossGroup,tcpWorkerGroup,ip,tcpConfig.getPort(),tcpConfig.getCodec()));
+            if (tcpConfig.getEnable()) {
+                for (int i = tcpConfig.getStartRouterIp(); i <= tcpConfig.getEndRouterIp(); i++) {
+                    for (int j = tcpConfig.getStartIp(); j <= tcpConfig.getEndIp(); j++) {
+                        String ip = tcpConfig.getIpPrefix() + "." + i + "." + j;
+                        executorService.execute(() -> startTcpServer(tcpBossGroup, tcpWorkerGroup, ip, tcpConfig.getPort(),
+                                tcpConfig.getCodec()));
+                    }
                 }
             }
             // udp device emulation
-            for (int i = udpConfig.getStartRouterIp(); i <= udpConfig.getEndRouterIp(); i++) {
-                for (int j = udpConfig.getStartIp(); j <= udpConfig.getEndIp(); j++) {
-                    String ip = udpConfig.getIpPrefix() + "." + i + "." + j;
-                    executorService.execute(() -> startUdpServer(udpWorkerGroup,ip,udpConfig.getPort(),udpConfig.getCodec()));
+            if (udpConfig.getEnable()) {
+                for (int i = udpConfig.getStartRouterIp(); i <= udpConfig.getEndRouterIp(); i++) {
+                    for (int j = udpConfig.getStartIp(); j <= udpConfig.getEndIp(); j++) {
+                        String ip = udpConfig.getIpPrefix() + "." + i + "." + j;
+                        executorService.execute(() -> startUdpServer(udpWorkerGroup, ip, udpConfig.getPort(),
+                                udpConfig.getCodec()));
+                    }
                 }
             }
         }
