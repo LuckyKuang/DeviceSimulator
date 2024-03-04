@@ -50,7 +50,7 @@ public class InitServer {
     public void init() {
         try(ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
             // tcp device emulation
-            if (tcpConfig.getEnable()) {
+            if (Boolean.TRUE.equals(tcpConfig.getEnable())) {
                 for (int i = tcpConfig.getStartRouterIp(); i <= tcpConfig.getEndRouterIp(); i++) {
                     for (int j = tcpConfig.getStartIp(); j <= tcpConfig.getEndIp(); j++) {
                         String ip = tcpConfig.getIpPrefix() + "." + i + "." + j;
@@ -60,7 +60,7 @@ public class InitServer {
                 }
             }
             // udp device emulation
-            if (udpConfig.getEnable()) {
+            if (Boolean.TRUE.equals(udpConfig.getEnable())) {
                 for (int i = udpConfig.getStartRouterIp(); i <= udpConfig.getEndRouterIp(); i++) {
                     for (int j = udpConfig.getStartIp(); j <= udpConfig.getEndIp(); j++) {
                         String ip = udpConfig.getIpPrefix() + "." + i + "." + j;
