@@ -1,0 +1,15 @@
+{
+  "AT+System=On": {
+    "AT+System?": "AT+System#On"
+  },
+  "AT+System=Off": {
+    "AT+System?": "AT+System#On",
+    "AT+LightSource?": "AT+LightSource#Off"
+  },
+  "AT+LightSource=On": {
+    "AT+LightSource?": "AT+LightSource#On"
+  },
+  "AT+LightSource=Off": {
+    "AT+LightSource?": "AT+LightSource#Off"
+  }
+}

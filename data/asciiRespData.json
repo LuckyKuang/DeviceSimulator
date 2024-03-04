@@ -1,0 +1,8 @@
+{
+  "AT+System?": "AT+System#Off",
+  "AT+System=On": "AT+System#Ok",
+  "AT+System=Off": "AT+System#Ok",
+  "AT+LightSource?": "AT+LightSource#Off",
+  "AT+LightSource=On": "AT+LightSource#Ok",
+  "AT+LightSource=Off": "AT+LightSource#Ok"
+}

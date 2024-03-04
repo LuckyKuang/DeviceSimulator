@@ -16,6 +16,8 @@
 
 package com.luckykuang.devicesimulator.util;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.luckykuang.devicesimulator.handler.udp.UdpServeInitializer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -29,8 +31,11 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,17 +49,23 @@ import static com.luckykuang.devicesimulator.constant.Constants.*;
 @Slf4j
 public final class UdpUtils {
     public static final Map<String,Map<String,String>> UDP_DEVICE_CACHE = new ConcurrentHashMap<>();
+    private static JSONObject asciiJsonObj;
+    private static JSONObject hexJsonObj;
     private UdpUtils(){}
+
+    static {
+        String asciiFilePath = System.getProperty("user.dir") + "/data/asciiCommandSetup.json";
+        String asciiJsonStr = readFileStringByFiles(asciiFilePath);
+        asciiJsonObj = JSON.parseObject(asciiJsonStr);
+
+        String hexFilePath = System.getProperty("user.dir") + "/data/hexCommandSetup.json";
+        String hexJsonStr = readFileStringByFiles(hexFilePath);
+        hexJsonObj = JSON.parseObject(hexJsonStr);
+    }
 
     public static void startUdpServer(EventLoopGroup workerGroup, String ip, Integer port, String codec) {
         try {
-            if (ASCII.equalsIgnoreCase(codec)){
-                UDP_DEVICE_CACHE.put(ip,getAsciiExecCache());
-            } else if (HEX.equalsIgnoreCase(codec)){
-                UDP_DEVICE_CACHE.put(ip,getHexExecCache());
-            } else {
-                throw new RuntimeException(UNSUPPORTED);
-            }
+            UDP_DEVICE_CACHE.put(ip,getExecCache(codec));
             Bootstrap serverBootstrap = new Bootstrap();
             serverBootstrap.group(workerGroup);
             serverBootstrap.channel(NioDatagramChannel.class);
@@ -81,28 +92,6 @@ public final class UdpUtils {
         return socketAddress.toString();
     }
 
-    private static Map<String,String> getAsciiExecCache() {
-        Map<String,String> execCache = new HashMap<>();
-        execCache.put("AT+System?\r\n","AT+System#Off\r\n");
-        execCache.put("AT+System=On\r\n","AT+System#Ok\r\n");
-        execCache.put("AT+System=Off\r\n","AT+System#Ok\r\n");
-        execCache.put("AT+LightSource?\r\n","AT+LightSource#Off\r\n");
-        execCache.put("AT+LightSource=On\r\n","AT+LightSource#Ok\r\n");
-        execCache.put("AT+LightSource=Off\r\n","AT+LightSource#Ok\r\n");
-        return execCache;
-    }
-
-    private static Map<String,String> getHexExecCache() {
-        Map<String,String> execCache = new HashMap<>();
-        execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f66660d0a");
-        execCache.put("41542b53797374656d3d4f6e0d0a","41542b53797374656d234f6b0d0a");
-        execCache.put("41542b53797374656d3d4f66660d0a","41542b53797374656d234f6b0d0a");
-        execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
-        execCache.put("41542b4c69676874536f757263653d4f6e0d0a","41542b4c69676874536f75726365234f6b0d0a");
-        execCache.put("41542b4c69676874536f757263653d4f66660d0a","41542b4c69676874536f75726365234f6b0d0a");
-        return execCache;
-    }
-
     public static boolean clientResp(ChannelHandlerContext ctx, String msg, String exec, String execResp, String respIp,
                                      Integer port, Map<String, String> execCache, String ip, String codec) {
         if (ASCII.equalsIgnoreCase(codec)){
@@ -110,16 +99,12 @@ public final class UdpUtils {
                 log.info("udp ip:{},receive:{},return:{}",ip, msg, execResp);
                 byte[] bytes = execResp.getBytes(CharsetUtil.US_ASCII);
                 ctx.channel().writeAndFlush(UdpUtils.getDatagramPacket(bytes, respIp, port));
-                if (msg.equals("AT+System=On\r\n")){
-                    execCache.put("AT+System?\r\n","AT+System#On\r\n");
-                } else if (msg.equals("AT+System=Off\r\n")){
-                    execCache.put("AT+System?\r\n","AT+System#Off\r\n");
-                    execCache.put("AT+LightSource?\r\n","AT+LightSource#Off\r\n");
-                } else if (msg.equals("AT+LightSource=On\r\n")){
-                    execCache.put("AT+LightSource?\r\n","AT+LightSource#On\r\n");
-                } else if (msg.equals("AT+LightSource=Off\r\n")){
-                    execCache.put("AT+LightSource?\r\n","AT+LightSource#Off\r\n");
-                }
+                asciiJsonObj.forEach((key,value) -> {
+                    if (msg.equals(key)){
+                        JSONObject valueObj = JSON.parseObject(String.valueOf(value));
+                        valueObj.forEach((k,v) -> execCache.put(k,String.valueOf(v)));
+                    }
+                });
                 return true;
             }
         } else if (HEX.equalsIgnoreCase(codec)) {
@@ -127,21 +112,42 @@ public final class UdpUtils {
                 log.info("udp ip:{},receive:{},return:{}",ip, msg, execResp);
                 byte[] bytes = execResp.getBytes(CharsetUtil.US_ASCII);
                 ctx.channel().writeAndFlush(UdpUtils.getDatagramPacket(bytes, respIp, port));
-                if (msg.equals("41542b53797374656d3d4f6e0d0a")){
-                    execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f6e0d0a");
-                } else if (msg.equals("41542b53797374656d3d4f66660d0a")){
-                    execCache.put("41542b53797374656d3f0d0a","41542b53797374656d234f66660d0a");
-                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
-                } else if (msg.equals("41542b4c69676874536f757263653d4f6e0d0a")){
-                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f6e0d0a");
-                } else if (msg.equals("41542b4c69676874536f757263653d4f66660d0a")){
-                    execCache.put("41542b4c69676874536f757263653f0d0a","41542b4c69676874536f75726365234f66660d0a");
-                }
+                hexJsonObj.forEach((key,value) -> {
+                    if (msg.equals(key)){
+                        JSONObject valueObj = JSON.parseObject(String.valueOf(value));
+                        valueObj.forEach((k,v) -> execCache.put(k,String.valueOf(v)));
+                    }
+                });
                 return true;
             }
         } else {
             throw new RuntimeException(UNSUPPORTED);
         }
         return false;
+    }
+
+    private static Map<String,String> getExecCache(String codec) {
+        Map<String,String> execCache = new HashMap<>();
+        String filePath;
+        if (ASCII.equalsIgnoreCase(codec)){
+            filePath = System.getProperty("user.dir") + "/data/asciiRespData.json";
+        } else if (HEX.equalsIgnoreCase(codec)){
+            filePath = System.getProperty("user.dir") + "/data/hexRespData.json";
+        } else {
+            throw new RuntimeException(UNSUPPORTED);
+        }
+        String jsonStr = readFileStringByFiles(filePath);
+        JSONObject jsonObj = JSON.parseObject(jsonStr);
+        jsonObj.forEach((key,value) -> execCache.put(key,String.valueOf(value)));
+        return execCache;
+    }
+
+    private static String readFileStringByFiles(String fromFilePath){
+        try {
+            return Files.readString(Paths.get(fromFilePath));
+        } catch (IOException e){
+            log.error("readFileStringByFiles exception",e);
+            return null;
+        }
     }
 }
