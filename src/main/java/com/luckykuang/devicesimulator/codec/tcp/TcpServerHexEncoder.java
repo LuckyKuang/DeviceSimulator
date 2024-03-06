@@ -32,7 +32,7 @@ public class TcpServerHexEncoder extends MessageToByteEncoder<String> {
     protected void encode(ChannelHandlerContext ctx, String in, ByteBuf out) throws Exception {
         try {
             log.info("tcp encode send msg:[{}]",in);
-            byte[] bytes = Hex.decodeHex(in);
+            byte[] bytes = Hex.decodeHex(in.toLowerCase());
             out.writeBytes(bytes);
         } catch (Exception e){
             log.error("tcp encode exception",e);

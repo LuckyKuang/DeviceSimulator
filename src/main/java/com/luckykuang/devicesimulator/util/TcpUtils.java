@@ -114,11 +114,11 @@ public final class TcpUtils {
                 return true;
             }
         } else if (HEX.equalsIgnoreCase(codec)) {
-            if (msg.equals(exec)){
+            if (msg.equals(exec.toLowerCase())){
                 log.info("tcp ip:{},receive:{},return:{}",ip, msg, execResp);
                 ctx.channel().writeAndFlush(execResp);
                 hexJsonObj.forEach((key,value) -> {
-                    if (msg.equals(key)){
+                    if (msg.equals(key.toLowerCase())){
                         JSONObject valueObj = JSON.parseObject(String.valueOf(value));
                         valueObj.forEach((k,v) -> execCache.put(k,String.valueOf(v)));
                     }

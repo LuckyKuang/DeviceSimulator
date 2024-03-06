@@ -46,7 +46,7 @@ public class UdpServerHexEncoder extends MessageToMessageEncoder<DatagramPacket>
                 byteBuf.readBytes(bytes);
                 String send = new String(bytes, CharsetUtil.US_ASCII);
                 log.info("udp encode send msg:{},ip:{},port:{}",send,clientIp,port);
-                byte[] data = Hex.decodeHex(send);
+                byte[] data = Hex.decodeHex(send.toLowerCase());
                 out.add(UdpUtils.getDatagramPacket(data,clientIp,port));
             }
         } catch (Exception e){
